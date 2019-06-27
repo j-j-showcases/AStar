@@ -45,7 +45,14 @@ namespace astar
                 Console.WriteLine("No solution found!");
 
             f.DrawField(astar.Path);
-            Console.ReadLine();
+
+            Console.WriteLine();
+            Console.WriteLine("Again? (y)");
+
+            if (Console.ReadLine().Equals("y"))
+                Main(args);
+
+            return;
         }
     }
 }

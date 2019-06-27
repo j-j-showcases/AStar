@@ -55,9 +55,9 @@ namespace astar
                 Nodes.Add(new Node()
                 {
                     Solid = (i > 0 && i < (_width * _height) - 1) && rand.Next(100) <= blockedPercentage,
-                    Row = i % _height,
-                    Col = i - (i % _height)
-                }) ;
+                    Col = i % _height,
+                    Row = i / _height
+                });
 
             return Nodes.Last();
         }
@@ -72,15 +72,18 @@ namespace astar
         {
             var neighbors = new List<Node>();
             int index = Nodes.IndexOf(node);
-            int row = index % _height;
-            int col = (index - (row * _height));
+            int col = index % _width;
+            int row = index - (col * _width);
             foreach (var direction in _nodeDirections)
             {
-                if (row + direction.Row >= 0 && row + direction.Row < _height && col + direction.Col >= 0 && col + direction.Col < _width)
+                if (row + direction.Row >= 0 && row + direction.Row < _height - 1 && col + direction.Col >= 0 && col + direction.Col < _width - 1)
                 {
-                    int neighborRow = row + direction.Row;
                     int neighborCol = col + direction.Col;
-                    neighbors.Add(Nodes[(neighborRow * _height) + neighborCol]);
+                    int neighborRow = row + direction.Row;
+                    var neighbor = Nodes[neighborCol + (neighborRow * _height)];
+
+                    if (!neighbor.Solid)
+                        neighbors.Add(neighbor);
                 }
             }
 
@@ -93,8 +96,8 @@ namespace astar
         /// <param name="path">found path</param>
         public void DrawField(List<Node> path)
         {
-            int row = 0;
             int col = 0;
+            int row = 0;
 
             for (int i = 0; i < _width + 2; i++)
                 Console.Write('#');
@@ -103,10 +106,10 @@ namespace astar
             {
                 char text = node.Solid ? 'O' : 'X';
                 ConsoleColor consoleColor;
-                if (node.Visited)
-                    consoleColor = ConsoleColor.Red;
-                else if (path.Contains(node))
+                if (path.Contains(node))
                     consoleColor = ConsoleColor.Green;
+                else if (node.Visited)
+                    consoleColor = ConsoleColor.Red;
                 else
                     consoleColor = ConsoleColor.White;
 

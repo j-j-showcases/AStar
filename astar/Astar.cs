@@ -26,8 +26,8 @@ namespace astar
             const int d = 1;
             const int d2 = 1;
 
-            double dx = Math.Abs(node.Row - _destination.Row);
-            double dy = Math.Abs(node.Col - _destination.Col);
+            double dx = Math.Abs(node.Col - _destination.Col);
+            double dy = Math.Abs(node.Row - _destination.Row);
             return (d * (dx + dy)) + ((d2 - (2 * d)) * Math.Min(dx, dy));
         }
 
@@ -41,7 +41,11 @@ namespace astar
             //Create possible path list + add starting node (0, 0)
             Queue<Node> openNodes = new Queue<Node>();
             openNodes.Enqueue(_field.Nodes[0]);
-            double cost = 0;
+            Dictionary<Node, double> costSoFar = new Dictionary<Node, double>
+            {
+                [_field.Nodes[0]] = 0
+            };
+            Path.Add(_field.Nodes[0]);
 
             while (openNodes.Count > 0)
             {
@@ -56,13 +60,19 @@ namespace astar
 
                 foreach(var neighbor in _field.Neighbors(current))
                 {
-                    double tempCost = cost + 1;
+                    double tempCost = costSoFar[current] + 1;
 
-                    if(!Path.Contains(current) || tempCost < cost)
+                    if(!costSoFar.ContainsKey(neighbor) || costSoFar[neighbor] == costSoFar.Last().Value || tempCost < costSoFar[neighbor])
                     {
-                        cost = tempCost;
-                        openNodes.Enqueue(current);
-                        Path.Add(current);
+                        costSoFar[neighbor] = tempCost;
+                        //NOTE: heuristics should be added here (and add this as priorityqueue item
+                        openNodes.Enqueue(neighbor);
+
+                        int currentIndex = Path.IndexOf(current);
+                        if (currentIndex > -1)
+                            Path.RemoveRange(currentIndex + 1, Path.Count - (currentIndex + 1));
+
+                        Path.Add(neighbor);
                     }
                 }
             }
