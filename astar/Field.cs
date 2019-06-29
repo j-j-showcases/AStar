@@ -12,14 +12,10 @@ namespace astar
         private readonly int _width, _height;
         private static readonly Node[] _nodeDirections = new[]
         {
-            new Node(){Row = -1, Col = -1}, //NW
             new Node(){Row = -1, Col = 0},  //N
-            new Node(){Row = -1, Col = 1},  //NE
             new Node(){Row = 0, Col = -1},  //W
             new Node(){Row = 0, Col = 1},   //E
-            new Node(){Row = 1, Col = -1},  //SW
             new Node(){Row = 1, Col = 0},   //S
-            new Node(){Row = 1, Col = 1},   //SE
         };
         #endregion
 
@@ -51,13 +47,13 @@ namespace astar
             Nodes.Clear();
 
             //NOTE: first + last node (begin + destination) should always be non-solid
-            for (int y = 0; y < _height; y++)
+            for (int x = 0; x < _width; x++)
             {
-                for (int x = 0; x < _width; x++)
-                { 
+                for (int y = 0; y < _height; y++)
+                {
                     Nodes.Add(new Node()
                     {
-                        Solid = (x > 0 && y > 0) && (x < (_width - 1) && y < (_height - 1)) && rand.Next(100) <= blockedPercentage,
+                        Solid = !((x == 0 && y == 0) || (x == (_width - 1) && y == (_height - 1))) && rand.Next(100) <= blockedPercentage,
                         Col = x,
                         Row = y
                     });
@@ -78,15 +74,15 @@ namespace astar
             var neighbors = new List<Node>();
             int index = Nodes.IndexOf(node);
             int col = index % _width;
-            int row = index - (col * _width);
+            int row = (index - col) / _width;
 
             foreach (var direction in _nodeDirections)
             {
-                if (row + direction.Row >= 0 && row + direction.Row < _height - 1 && col + direction.Col >= 0 && col + direction.Col < _width - 1)
+                if (row + direction.Row >= 0 && row + direction.Row < _height && col + direction.Col >= 0 && col + direction.Col < _width)
                 {
                     int neighborCol = col + direction.Col;
                     int neighborRow = row + direction.Row;
-                    var neighbor = Nodes[neighborCol + (neighborRow * _height)];
+                    var neighbor = Nodes[neighborCol + (neighborRow * _width)];
 
                     if (!neighbor.Solid)
                         neighbors.Add(neighbor);
@@ -105,7 +101,7 @@ namespace astar
         {
             int col = 0;
             int row = 0;
-            
+
             // Loop extra for first horizontal wall
             for (int i = 0; i < _width + 2; i++)
                 Console.Write('+');

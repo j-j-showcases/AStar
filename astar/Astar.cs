@@ -10,6 +10,7 @@ namespace astar
     {
         private readonly Field _field;
         private readonly Node _destination;
+        private readonly Node _startNode;
 
         public List<Node> Path { get; } = new List<Node>();
 
@@ -17,18 +18,24 @@ namespace astar
         {
             _field = field;
             _destination = destination;
+            _startNode = _field.Nodes[0];
         }
 
         //NOTE: could alse be put into node itself --> and called on 
         private double Heuristic(Node node)
         {
-            //NOTE: Chebyshev distance
+            ////NOTE: Chebyshev distance
             const int d = 1;
-            const int d2 = 1;
+            //const int d2 = 1;
 
+            //double dx = Math.Abs(node.Col - _destination.Col);
+            //double dy = Math.Abs(node.Row - _destination.Row);
+            //return (d * (dx + dy)) + ((d2 - (2 * d)) * Math.Min(dx, dy));
+
+            //NOTE: Manhatten Distance
             double dx = Math.Abs(node.Col - _destination.Col);
             double dy = Math.Abs(node.Row - _destination.Row);
-            return (d * (dx + dy)) + ((d2 - (2 * d)) * Math.Min(dx, dy));
+            return d * (dx + dy);
         }
 
         //NOTE: this doesn't implement the heuristic yet!
@@ -38,41 +45,54 @@ namespace astar
         /// <returns>Wheter a path is found or not</returns>
         public bool FindPath()
         {
-            //Create possible path list + add starting node (0, 0)
+            //NOTE: openNodes should be priority queuue
             Queue<Node> openNodes = new Queue<Node>();
-            openNodes.Enqueue(_field.Nodes[0]);
+            openNodes.Enqueue(_startNode);
+            List<Node> closedNodes = new List<Node>();
             Dictionary<Node, double> costSoFar = new Dictionary<Node, double>
             {
-                [_field.Nodes[0]] = 0
+                [_startNode] = 0
             };
-            Path.Add(_field.Nodes[0]);
+            Dictionary<Node, Node> prevNode = new Dictionary<Node, Node>();
+
 
             while (openNodes.Count > 0)
             {
                 var current = openNodes.Dequeue();
+                closedNodes.Add(current);
                 current.Visited = true;
 
                 if (current == _destination)
                 {
-                    Path.Add(current);
+                    Path.Add(_startNode);
+                    Path.Add(_destination);
+                    Node tempNode = _destination;
+                    for(int i = prevNode.Count - 1; i >= 0; i--)
+                    {
+                        if (tempNode != _startNode)
+                        {
+                            tempNode = prevNode[tempNode];
+                            Path.Add(tempNode);
+                        }
+                    }
                     return true;
                 }
 
-                foreach(var neighbor in _field.Neighbors(current))
+                foreach (var neighbor in _field.Neighbors(current))
                 {
                     double tempCost = costSoFar[current] + 1;
 
-                    if(!costSoFar.ContainsKey(neighbor) || costSoFar[neighbor] == costSoFar.Last().Value || tempCost < costSoFar[neighbor])
+                    if (costSoFar.ContainsKey(neighbor) && tempCost < costSoFar[neighbor])
+                        costSoFar[neighbor] = tempCost;
+                    if (closedNodes.Contains(neighbor) && tempCost < costSoFar[neighbor])
+                        closedNodes.Remove(neighbor);
+                    if (!costSoFar.ContainsKey(neighbor) && !closedNodes.Contains(neighbor))
                     {
                         costSoFar[neighbor] = tempCost;
-                        //NOTE: heuristics should be added here (and add this as priorityqueue item
+                        //NOTE: heuristic should be added here as priority
                         openNodes.Enqueue(neighbor);
 
-                        int currentIndex = Path.IndexOf(current);
-                        if (currentIndex > -1)
-                            Path.RemoveRange(currentIndex + 1, Path.Count - (currentIndex + 1));
-
-                        Path.Add(neighbor);
+                        prevNode[neighbor] = current;
                     }
                 }
             }
