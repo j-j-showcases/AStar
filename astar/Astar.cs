@@ -46,8 +46,8 @@ namespace astar
         public bool FindPath()
         {
             //NOTE: openNodes should be priority queuue
-            Queue<Node> openNodes = new Queue<Node>();
-            openNodes.Enqueue(_startNode);
+            PriorityQueue<Node, double> openNodes = new PriorityQueue<Node, double>();
+            openNodes.Enqueue(_startNode, 0);
             List<Node> closedNodes = new List<Node>();
             Dictionary<Node, double> costSoFar = new Dictionary<Node, double>
             {
@@ -89,8 +89,7 @@ namespace astar
                     if (!costSoFar.ContainsKey(neighbor) && !closedNodes.Contains(neighbor))
                     {
                         costSoFar[neighbor] = tempCost;
-                        //NOTE: heuristic should be added here as priority
-                        openNodes.Enqueue(neighbor);
+                        openNodes.Enqueue(neighbor, tempCost + Heuristic(neighbor));
 
                         prevNode[neighbor] = current;
                     }
