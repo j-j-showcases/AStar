@@ -12,14 +12,10 @@ namespace astar
         private readonly int _width, _height;
         private static readonly Node[] _nodeDirections = new[]
         {
-            new Node(){Row = -1, Col = -1}, //NW
             new Node(){Row = -1, Col = 0},  //N
-            new Node(){Row = -1, Col = 1},  //NE
             new Node(){Row = 0, Col = -1},  //W
             new Node(){Row = 0, Col = 1},   //E
-            new Node(){Row = 1, Col = -1},  //SW
             new Node(){Row = 1, Col = 0},   //S
-            new Node(){Row = 1, Col = 1},   //SE
         };
         #endregion
 
@@ -51,13 +47,18 @@ namespace astar
             Nodes.Clear();
 
             //NOTE: first + last node (begin + destination) should always be non-solid
-            for (int i = 0; i < _width * _height; i++)
-                Nodes.Add(new Node()
+            for (int x = 0; x < _width; x++)
+            {
+                for (int y = 0; y < _height; y++)
                 {
-                    Solid = (i > 0 && i < (_width * _height) - 1) && rand.Next(100) <= blockedPercentage,
-                    Col = i % _height,
-                    Row = i / _height
-                });
+                    Nodes.Add(new Node()
+                    {
+                        Solid = !((x == 0 && y == 0) || (x == (_width - 1) && y == (_height - 1))) && rand.Next(100) <= blockedPercentage,
+                        Col = x,
+                        Row = y
+                    });
+                }
+            }
 
             return Nodes.Last();
         }
@@ -73,14 +74,15 @@ namespace astar
             var neighbors = new List<Node>();
             int index = Nodes.IndexOf(node);
             int col = index % _width;
-            int row = index - (col * _width);
+            int row = (index - col) / _width;
+
             foreach (var direction in _nodeDirections)
             {
-                if (row + direction.Row >= 0 && row + direction.Row < _height - 1 && col + direction.Col >= 0 && col + direction.Col < _width - 1)
+                if (row + direction.Row >= 0 && row + direction.Row < _height && col + direction.Col >= 0 && col + direction.Col < _width)
                 {
                     int neighborCol = col + direction.Col;
                     int neighborRow = row + direction.Row;
-                    var neighbor = Nodes[neighborCol + (neighborRow * _height)];
+                    var neighbor = Nodes[neighborCol + (neighborRow * _width)];
 
                     if (!neighbor.Solid)
                         neighbors.Add(neighbor);
@@ -92,6 +94,7 @@ namespace astar
 
         /// <summary>
         /// Draw nodes in 2d grid view
+        /// Path is a list of nodes which are the ones used to find the shortest route.
         /// </summary>
         /// <param name="path">found path</param>
         public void DrawField(List<Node> path)
@@ -99,13 +102,17 @@ namespace astar
             int col = 0;
             int row = 0;
 
+            // Loop extra for first horizontal wall
             for (int i = 0; i < _width + 2; i++)
-                Console.Write('#');
+                Console.Write('+');
+
             Console.WriteLine();
             foreach (var node in Nodes)
             {
+                // Initialsing some variables.
                 char text = node.Solid ? 'O' : 'X';
                 ConsoleColor consoleColor;
+
                 if (path.Contains(node))
                     consoleColor = ConsoleColor.Green;
                 else if (node.Visited)
@@ -113,17 +120,18 @@ namespace astar
                 else
                     consoleColor = ConsoleColor.White;
 
-                Console.ForegroundColor = ConsoleColor.White;
+                Field.ResetForegroundColor();
                 if (col == 0)
-                    Console.Write('.');
+                    Console.Write('+');
 
-                Console.ForegroundColor = consoleColor;
+                Field.SetForegroundColor(consoleColor);
                 Console.Write(text);
 
                 Console.ForegroundColor = ConsoleColor.White;
                 if (col == _width - 1)
                 {
-                    Console.Write('.');
+                    // Draws the outside walls
+                    Console.Write('+');
                     Console.WriteLine();
                     col = 0;
                     row++;
@@ -133,10 +141,25 @@ namespace astar
                     col++;
                 }
             }
-            Console.ForegroundColor = ConsoleColor.White;
+            // Reset foreground
+            Field.ResetForegroundColor();
+
+            // Loop extra for last wall horizontally
             for (int i = 0; i < _width + 2; i++)
-                Console.Write('#');
+                // Draws the outside walls
+                Console.Write('+');
         }
+
+        public static void SetForegroundColor(System.ConsoleColor consoleColor)
+        {
+            Console.ForegroundColor = consoleColor;
+        }
+
+        public static void ResetForegroundColor()
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
         #endregion
     }
 }

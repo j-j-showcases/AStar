@@ -35,7 +35,9 @@ namespace astar
                     askAgain = false;
             }
 
-            Field f = new Field(row, col);
+            Field f = new Field(col, row);
+            // Generate notes always returns the last node???
+            // This way generate notes has more responsebilities thans just generating nodes.
             Node dest = f.GenerateNodes(wallPerc);
 
             Astar astar = new Astar(f, dest);
@@ -47,8 +49,9 @@ namespace astar
             f.DrawField(astar.Path);
 
             Console.WriteLine();
-            Console.WriteLine("Again? (y)");
+            Console.WriteLine("Again? (y/n Default: n)");
 
+            // Check if user would like to do it again.
             if (Console.ReadLine().Equals("y"))
                 Main(args);
 
