@@ -1,103 +1,124 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace astar
+namespace Algorithms
 {
     public class Astar
     {
         private readonly Field _field;
-        private readonly Node _destination;
-        private readonly Node _startNode;
+        private readonly Node goal;
+        private readonly Node start;
+
+        // Initialise variables
+        Dictionary<Node, Node> prevNode = new Dictionary<Node, Node>();
+        Dictionary<Node, double> costSoFar = new Dictionary<Node, double>();
 
         public List<Node> Path { get; } = new List<Node>();
 
         public Astar(Field field, Node destination)
         {
             _field = field;
-            _destination = destination;
-            _startNode = _field.Nodes[0];
+            goal = destination;
+            start = _field.Nodes[0];
         }
 
-        //NOTE: could alse be put into node itself --> and called on 
-        private double Heuristic(Node node)
-        {
-            ////NOTE: Chebyshev distance
-            const int d = 1;
-            //const int d2 = 1;
-
-            //double dx = Math.Abs(node.Col - _destination.Col);
-            //double dy = Math.Abs(node.Row - _destination.Row);
-            //return (d * (dx + dy)) + ((d2 - (2 * d)) * Math.Min(dx, dy));
-
-            //NOTE: Manhatten Distance
-            double dx = Math.Abs(node.Col - _destination.Col);
-            double dy = Math.Abs(node.Row - _destination.Row);
-            return d * (dx + dy);
-        }
-
-        //NOTE: this doesn't implement the heuristic yet!
         /// <summary>
         /// Find path on set node field form 1st node till set destination
         /// </summary>
-        /// <returns>Wheter a path is found or not</returns>
-        public bool FindPath()
+        public void AStarSearch(string algorithm)
         {
-            //NOTE: openNodes should be priority queuue
-            Queue<Node> openNodes = new Queue<Node>();
-            openNodes.Enqueue(_startNode);
-            List<Node> closedNodes = new List<Node>();
-            Dictionary<Node, double> costSoFar = new Dictionary<Node, double>
-            {
-                [_startNode] = 0
-            };
-            Dictionary<Node, Node> prevNode = new Dictionary<Node, Node>();
+            // openNodis is a list of key-value pairs:
+            // Node, (double) priority
+            PriorityQueue<Node> openNodes = new PriorityQueue<Node>();
 
+            // Add the starting Node to the frontier with a priority of 0
+            openNodes.Enqueue(start, 0);
+
+            prevNode.Add(start, start); // is set to start, None in example
+            costSoFar.Add(start, 0f);
 
             while (openNodes.Count > 0)
             {
-                var current = openNodes.Dequeue();
-                closedNodes.Add(current);
+                // Get the node from the periorityQueue that has the lowest
+                // priority, and remove it from the queue.
+                Node current = openNodes.Dequeue();
+
                 current.Visited = true;
 
-                if (current == _destination)
-                {
-                    Path.Add(_startNode);
-                    Path.Add(_destination);
-                    Node tempNode = _destination;
-                    for(int i = prevNode.Count - 1; i >= 0; i--)
-                    {
-                        if (tempNode != _startNode)
-                        {
-                            tempNode = prevNode[tempNode];
-                            Path.Add(tempNode);
-                        }
-                    }
-                    return true;
-                }
+                // If we're at the goal Node, stop looking.
+                if (current == goal) break;
 
                 foreach (var neighbor in _field.Neighbors(current))
                 {
-                    double tempCost = costSoFar[current] + 1;
 
-                    if (costSoFar.ContainsKey(neighbor) && tempCost < costSoFar[neighbor])
-                        costSoFar[neighbor] = tempCost;
-                    if (closedNodes.Contains(neighbor) && tempCost < costSoFar[neighbor])
-                        closedNodes.Remove(neighbor);
-                    if (!costSoFar.ContainsKey(neighbor) && !closedNodes.Contains(neighbor))
+                    // +1 can be moved into the node.
+                    // Only one becau
+                    double newCost = costSoFar[current] + 1;
+
+                    // If there's no cost assigned to the neighbor yet, or if the new
+                    // cost is lower than the assigned one, add newCost for this neighbor
+                    if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor])
                     {
-                        costSoFar[neighbor] = tempCost;
-                        //NOTE: heuristic should be added here as priority
-                        openNodes.Enqueue(neighbor);
+                        // If we're replacing the previous cost, remove it
+                        if (costSoFar.ContainsKey(neighbor))
+                        {
+                            costSoFar.Remove(neighbor);
+                            prevNode.Remove(neighbor);
+                        }
 
-                        prevNode[neighbor] = current;
+                        costSoFar.Add(neighbor, newCost);
+                        prevNode.Add(neighbor, current);
+                        double priority = newCost + CalcutateHeuristics(neighbor, goal, algorithm);
+                        openNodes.Enqueue(neighbor, priority);
                     }
                 }
             }
+        }
 
-            return false;
+        /// <summary>
+        /// Find path on set node field form 1st node till set destination
+        /// </summary>
+        /// <returns>Return a List of Nodes representing the found path</returns>
+        public List<Node> FindPath()
+        {
+
+            List<Node> path = new List<Node>();
+            Node current = goal;
+            // path.Add(current);
+
+            while (!current.Equals(start))
+            {
+                if (!prevNode.ContainsKey(current))
+                {
+                    Console.WriteLine("cameFrom does not contain current.");
+                    return new List<Node>();
+                }
+                path.Add(current);
+                current = prevNode[current];
+            }
+            // path.Add(start);
+            path.Reverse();
+            return path;
+        }
+
+        /// <summary>
+        /// Calculates the heuristics by using diffrent algorithms.
+        /// </summary>
+        /// <returns>The value of the heuristics in integer</returns>
+        public double CalcutateHeuristics(Node node, Node destination, string algorithm = "ManhattanDistance")
+        {
+            MethodInfo algorithmFunction = typeof(Heuristics).GetMethod(algorithm);
+
+            if (algorithmFunction == null)
+            {
+                throw new System.ArgumentException("The given algorithm is not implemented.", "algorithm");
+            }
+
+            return (double)algorithmFunction.Invoke(null, new object[] { node.Col, destination.Col, node.Row, destination.Row });
         }
     }
 }

@@ -4,14 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace astar
+namespace Algorithms
 {
     public class Field
     {
         #region variables
         private readonly int _width, _height;
-        private static readonly Node[] _nodeDirections = new[]
-        {
+        private static readonly Node[] _nodeDirections = {
             new Node(){Row = -1, Col = 0},  //N
             new Node(){Row = 0, Col = -1},  //W
             new Node(){Row = 0, Col = 1},   //E
@@ -110,15 +109,22 @@ namespace astar
             foreach (var node in Nodes)
             {
                 // Initialsing some variables.
-                char text = node.Solid ? 'O' : 'X';
+                char text = node.Solid ? 'O' : '•';
                 ConsoleColor consoleColor;
 
                 if (path.Contains(node))
+                {
+                    text = 'X';
                     consoleColor = ConsoleColor.Green;
+                }
                 else if (node.Visited)
+                {
                     consoleColor = ConsoleColor.Red;
+                }
                 else
+                {
                     consoleColor = ConsoleColor.White;
+                }
 
                 Field.ResetForegroundColor();
                 if (col == 0)

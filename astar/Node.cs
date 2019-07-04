@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace astar
+namespace Algorithms
 {
     //NOTE: should be struct --> this means everything should be ref else code wont work
     public class Node
